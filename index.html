@@ -1,0 +1,320 @@
+```html
+<!DOCTYPE html>
+<html lang="hi" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kuch Pal, Kuch Ehsaas - Interactive Digital E-Book</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Playfair Display, Lora, Inter & Noto Serif Devanagari -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,400&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            parchment: {
+              50: '#FDFCF7',
+              100: '#FAF6F0',
+              200: '#F4ECE1',
+              300: '#EADBC8',
+              800: '#3D312A',
+              900: '#2C221E',
+            },
+            gold: {
+              400: '#D4AF37',
+              500: '#C59B27',
+              600: '#B8860B',
+              700: '#996515',
+            }
+          },
+          fontFamily: {
+            serif: ['Playfair Display', 'serif'],
+            body: ['Lora', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+            cinzel: ['Cinzel', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF6F0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4AF37;
+      border-radius: 4px;
+    }
+
+    /* Page Turn & Book Texture Effects */
+    .paper-shadow {
+      box-shadow: 0 10px 30px -5px rgba(44, 34, 30, 0.15), 0 4px 12px -2px rgba(44, 34, 30, 0.08);
+    }
+    .paper-spine {
+      background: linear-gradient(90deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.03) 3%, rgba(255,255,255,0.4) 6%, rgba(0,0,0,0) 10%);
+    }
+    .watermark-overlay {
+      pointer-events: none;
+      user-select: none;
+    }
+    
+    /* Animation Keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.35s ease-out forwards;
+    }
+
+    @keyframes pageTurnNext {
+      0% { transform: rotateY(0deg); opacity: 1; }
+      50% { transform: rotateY(-15deg) scale(0.98); opacity: 0.7; }
+      100% { transform: rotateY(0deg); opacity: 1; }
+    }
+    .animate-page-turn {
+      animation: pageTurnNext 0.4s ease-in-out;
+    }
+
+    /* Prevent text selection if required */
+    .no-select {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="h-full bg-[#1C1613] text-parchment-900 font-sans antialiased overflow-x-hidden selection:bg-gold-500 selection:text-white">
+
+  <!-- Root Application Container -->
+  <div id="app" class="min-h-full flex flex-col relative">
+
+    <!-- TOP BAR (Always Visible on Opening Screen & Navigation) -->
+    <header class="w-full bg-[#2C221E]/95 backdrop-blur-md border-b border-gold-600/30 text-parchment-100 px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-md">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="appState.goHome()">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-parchment-900 shadow-md">
+          <i class="fa-solid fa-book-open text-base"></i>
+        </div>
+        <div>
+          <h1 class="font-serif text-base sm:text-lg font-bold tracking-wide text-gold-400 leading-tight">Kuch Pal, Kuch Ehsaas</h1>
+          <p class="text-[10px] sm:text-xs text-parchment-300/80 font-light">Digital E-Book Edition</p>
+        </div>
+      </div>
+
+      <!-- TOP RIGHT CORNER: OWNER BUTTON -->
+      <div id="topRightActions" class="flex items-center space-x-2">
+        <button id="ownerBtn" onclick="appState.openOwnerAuthModal()" class="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-parchment-900 font-semibold text-xs sm:text-sm shadow-lg border border-gold-400/50 flex items-center space-x-1.5 transition-all duration-200 active:scale-95">
+          <i class="fa-solid fa-crown text-xs"></i>
+          <span>OWNER</span>
+        </button>
+        <button id="logoutBtn" onclick="appState.logout()" class="hidden px-3 py-1.5 rounded-full bg-red-900/40 hover:bg-red-800/60 text-red-200 border border-red-700/50 text-xs font-medium flex items-center space-x-1 transition-all">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN DYNAMIC CONTENT CONTAINER -->
+    <main id="mainContent" class="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 relative">
+      <!-- Dynamic Views rendered here via JS -->
+    </main>
+
+    <!-- FOOTER BRANDING -->
+    <footer class="w-full py-3 bg-[#1C1613] border-t border-parchment-800/40 text-center text-xs text-parchment-300/60">
+      <p>© Digital E-Book Reader • Privately Authorized Content</p>
+    </footer>
+  </div>
+
+  <!-- OWNER LOGIN MODAL (Strict Access Gate) -->
+  <div id="ownerModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+    <div class="bg-[#2C221E] border border-gold-500/40 w-full max-w-md rounded-2xl p-6 sm:p-8 shadow-2xl relative text-parchment-100">
+      <button onclick="appState.closeOwnerAuthModal()" class="absolute top-4 right-4 text-parchment-300 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-full bg-gold-500/10 border border-gold-500/40 flex items-center justify-center mx-auto mb-3 text-gold-400 text-2xl">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <h2 class="font-serif text-2xl font-bold text-gold-400">Owner Access Portal</h2>
+        <p class="text-xs text-parchment-300/70 mt-1">Authorized E-Book Owner & Administrator Login</p>
+      </div>
+
+      <form onsubmit="appState.handleOwnerLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-parchment-300 mb-1">Owner User ID</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-parchment-300/60 text-sm"><i class="fa-solid fa-user-gear"></i></span>
+            <input type="text" id="ownerIdInput" required placeholder="e.g. owner" value="owner" class="w-full bg-[#1C1613] border border-parchment-800 rounded-lg pl-9 pr-3 py-2.5 text-sm text-parchment-100 focus:outline-none focus:border-gold-500 transition-colors" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-parchment-300 mb-1">Owner Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-parchment-300/60 text-sm"><i class="fa-solid fa-lock"></i></span>
+            <input type="password" id="ownerPassInput" required placeholder="Enter Owner Password" value="admin1234" class="w-full bg-[#1C1613] border border-parchment-800 rounded-lg pl-9 pr-10 py-2.5 text-sm text-parchment-100 focus:outline-none focus:border-gold-500 transition-colors" />
+            <button type="button" onclick="appState.togglePasswordVisibility('ownerPassInput', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-parchment-300/60 hover:text-gold-400">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="ownerAuthError" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800/60 p-2.5 rounded-lg text-center">
+          Invalid Owner Credentials or insufficient administrative permissions.
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-parchment-900 font-bold text-sm shadow-lg transition-transform active:scale-98 flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-key"></i>
+          <span>Authenticate & Open Admin Dashboard</span>
+        </button>
+      </form>
+      <div class="mt-4 pt-4 border-t border-parchment-800/50 text-center">
+        <p class="text-[11px] text-parchment-300/50">Default Owner ID: <span class="text-gold-400 font-mono">owner</span> | Password: <span class="text-gold-400 font-mono">admin1234</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHATSAPP SHARE MODAL -->
+  <div id="whatsappModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+    <div class="bg-[#2C221E] border border-green-500/40 w-full max-w-md rounded-2xl p-6 shadow-2xl text-parchment-100 relative">
+      <button onclick="appState.closeWhatsAppModal()" class="absolute top-4 right-4 text-parchment-300 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center mb-5">
+        <div class="w-12 h-12 rounded-full bg-green-500/20 text-green-400 border border-green-500/40 flex items-center justify-center mx-auto mb-2 text-2xl">
+          <i class="fa-brands fa-whatsapp"></i>
+        </div>
+        <h3 class="font-serif text-xl font-bold text-green-400">WhatsApp Reader Share Link</h3>
+        <p class="text-xs text-parchment-300/70 mt-1">Generate a mobile-optimized reader invitation link.</p>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block text-parchment-300 font-medium mb-1">Select Reader Account</label>
+          <select id="waReaderSelect" onchange="appState.updateWhatsAppLinkPreview()" class="w-full bg-[#1C1613] border border-parchment-800 rounded-lg p-2.5 text-parchment-100 focus:outline-none focus:border-green-500">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-parchment-300 font-medium mb-1">Generated WhatsApp Message</label>
+          <textarea id="waMessagePreview" rows="4" readonly class="w-full bg-[#1C1613] border border-parchment-800 rounded-lg p-3 text-parchment-200 font-mono text-[11px] leading-relaxed focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex space-x-2 pt-2">
+          <button onclick="appState.copyWhatsAppMessage()" class="flex-1 py-2.5 rounded-lg bg-parchment-800 hover:bg-parchment-700 text-parchment-100 font-medium flex items-center justify-center space-x-1.5 transition-colors">
+            <i class="fa-regular fa-copy"></i>
+            <span>Copy Text</span>
+          </button>
+          <button onclick="appState.openWhatsAppDirect()" class="flex-1 py-2.5 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold flex items-center justify-center space-x-1.5 shadow-lg transition-transform active:scale-95">
+            <i class="fa-brands fa-whatsapp text-lg"></i>
+            <span>Send to WhatsApp</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 bg-gold-600 text-parchment-900 px-4 py-2.5 rounded-xl shadow-2xl font-semibold text-xs flex items-center space-x-2 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+    <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">Action completed successfully</span>
+  </div>
+
+  <!-- Firebase ESM Import Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Global Fallback and Firebase Integration Setup
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ebook-kuch-pal';
+    let firebaseConfig = null;
+    try {
+      if (typeof __firebase_config !== 'undefined') {
+        firebaseConfig = JSON.parse(__firebase_config);
+      }
+    } catch(e) {
+      console.warn("Firebase config not directly present, falling back to rich local state persistence.", e);
+    }
+
+    let app = null;
+    let db = null;
+    let auth = null;
+
+    if (firebaseConfig) {
+      try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+      } catch (err) {
+        console.error("Firebase init failed:", err);
+      }
+    }
+
+    // Default Seed Data (Story text, default owner, default reader)
+    const DEFAULT_COVER_IMAGE = "1000184624.jpg";
+
+    // High quality SVG illustration fallback for pencil sketch cover/watermark
+    const SVG_SKETCH_DATAURL = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%"><rect width="800" height="1000" fill="%23f7f3ee"/><path d="M400,80 Q410,500 400,920" stroke="%233d312a" stroke-width="4" fill="none" opacity="0.4"/><path d="M80,100 Q390,80 400,110 L400,890 Q390,920 80,900 Z" fill="none" stroke="%232c221e" stroke-width="3" opacity="0.6"/><path d="M720,100 Q410,80 400,110 L400,890 Q410,920 720,900 Z" fill="none" stroke="%232c221e" stroke-width="3" opacity="0.6"/><g opacity="0.45" stroke="%232c221e" stroke-width="2" fill="none"><path d="M120,200 C200,180 300,190 370,210"/><path d="M120,260 C200,240 300,250 370,270"/><path d="M120,320 C200,300 300,310 370,330"/><path d="M430,210 C500,190 600,180 680,200"/><path d="M430,270 C500,250 600,240 680,260"/><path d="M430,330 C500,310 600,300 680,320"/></g><circle cx="230" cy="550" r="45" fill="none" stroke="%232c221e" stroke-width="2" opacity="0.5"/><path d="M230,595 L230,730 M230,640 L190,700 M230,640 L270,700 M200,550 C180,520 220,480 230,460" fill="none" stroke="%232c221e" stroke-width="2.5" opacity="0.6"/><path d="M570,520 C560,500 580,470 590,450 M570,520 L570,720 M570,610 L540,680 M570,610 L600,680" fill="none" stroke="%232c221e" stroke-width="3" opacity="0.75"/><text x="400" y="960" font-family="serif" font-size="22" fill="%232c221e" text-anchor="middle" letter-spacing="4" opacity="0.6">KUCH PAL, KUCH EHSAAS</text></svg>`;
+
+    const DEFAULT_BOOK = {
+      id: "kuch-pal-kuch-ehsaas",
+      title: "Kuch Pal, Kuch Ehsaas",
+      subtitle: "Ek aisi kahani, jismein kuch minutes ki keemat umr bhar ki yaadon se bhi zyada thi...",
+      quote: "KUCH YAADEIN KABHI DELETE NAHI HOTI",
+      coverImage: DEFAULT_COVER_IMAGE,
+      watermarkImage: DEFAULT_COVER_IMAGE,
+      watermarkEnabled: true,
+      watermarkOpacity: 0.08,
+      pages: [
+        {
+          id: "p0",
+          pageNumber: 0,
+          heading: "Kuch Pal, Kuch Ehsaas",
+          subheading: "Ek aisi kahani, jismein kuch minutes ki keemat umr bhar ki yaadon se bhi zyada thi...",
+          content: "KUCH YAADEIN KABHI DELETE NAHI HOTI\n\nEk aisi kahani, jismein kuch minutes ki keemat umr bhar ki yaadon se bhi zyada thi...",
+          imagePos: "Top",
+          imageSize: "Medium",
+          fontFamily: "Serif Classic",
+          fontSize: "Normal",
+          textAlign: "Center",
+          theme: "Warm Parchment",
+          watermark: true
+        },
+        {
+          id: "p1",
+          pageNumber: 1,
+          heading: "",
+          content: `Ek aisi kahani, jismein kuch minutes ki keemat umr bhar ki yaadon se bhi zyada thi...\n\nKehte hain, zindagi mein kuch log achanak milte hain. Na unse milne ki koi khaas planning hoti hai aur na hi yeh pata hota hai ki ek din unki chhoti-chhoti baatein hamari yaadon ka itna khoobsurat hissa ban jaayengi.\n\nMeri kahani mein bhi ek aisa hi kirdaar aaya.\n\nShuruaat bilkul normal thi. Office ki kuch baatein, chhoti-chhoti nok-jhok, kabhi hansi-mazaak toh kabhi roothna-manana. Dheere dheere in normal-si baaton mein ek alag hi apnapan mehsoos hone laga.\n\nPata hi nahi chala ki kab kisi ke aane-jaane ka time meri dincharya ka hissa ban gaya. Kab kisi ki ek muskurahat poore din ka mood badalne lagi aur kab kisi ki narazgi mann mein ek chhoti-si bechaini chhodne lagi.\n\nShayad yahi emotional attachment hota hai.\nKuch rishton ko koi naam dena zaroori nahi hota. Woh bas apni jagah bana lete hain.\n\nEk jhootha bahana, jiske peeche ek sachchi chahat thi\n\nShuruaat mein hamare beech itni nazdeekiyan nahi thi. Hum milte toh the, baatein bhi hoti thi, lekin woh apnapan abhi nahi aaya tha, jo baad mein hamari chhoti-chhoti mulaqaton ka hissa ban gaya.\n\nShayad main unke saath thoda aur time bitana chahta tha, lekin seedhe kehne ki himmat nahi hoti thi.\n\nPhir ek din maine unse kaha ki meri behen ka birthday hai aur mujhe uske liye ek gift khareedna hai. Maine unse yeh bhi kaha ki mujhe uske liye anklet aur bracelet khareedne hain, isliye woh mere saath chal dein.\n\nLekin sachchai kuch aur thi.\n\nMeri koi behen ka birthday nahi tha. Mujhe kisi ke liye koi gift bhi nahi khareedna tha. Woh sab toh bas ek bahana tha.\n\nAsal mein, main unke saath thoda aur time bitana chahta tha. Unke saath bazaar ghoomna chahta tha, unki pasand jaanana chahta tha, unki baatein sunna chahta tha aur un kuch palon ko jeena chahta tha, jinke liye shayad mere paas koi doosra bahana nahi tha.\n\nAaj sochta hoon toh us chhote-se jhooth par hansi bhi aati hai aur apne us waqt ke bholapan par pyaar bhi.\n\n-1-`,
+          imagePos: "Hidden",
+          imageSize: "Medium",
+          fontFamily: "Serif Classic",
+          fontSize: "Normal",
+          textAlign: "Left",
+          theme: "Warm Parchment",
+          watermark: true
+        },
+        {
+          id: "p2",
+          pageNumber: 2,
+          heading: "",
+          content: `Kabhi-kabhi insaan apni feelings seedhe shabdon mein nahi keh paata. Woh chhoti-chhoti wajahen dhoondhta hai, taaki us insaan ke saath kuch pal aur bita sake, jiske saath rehna use achha lagta hai.\n\nMere liye woh gift khareedne ka bahana nahi tha, balki unke saath bitaya jaane wala woh waqt asli tohfa tha.\n\nShayad unhe us din yeh sab normal laga hoga, lekin mere liye woh ek chhoti-si yaad ban gayi.\n\nKuch cheezein, jinhein apna banana chahta tha... phir lauta diya\n\nEk aur aadat thi meri.\nJab bhi unki koi chhoti-moti cheez mere paas aati, toh kabhi-kabhi main use ek-do din apne paas rakh leta tha. Mann mein ek ajeeb-si ichha hoti thi ki unke istemaal ki koi cheez mere paas rahe.\n\nShayad main un cheezon mein unki maujoodgi mehsoos karna chahta tha.\n\nKabhi sochta tha ki unke saath bitaye waqt ki yaad ke taur par unki kuch chhoti-chhoti cheezein apne paas sambhalkar rakh loon. Taaki future mein jab kabhi un dino ki yaad aaye, toh un cheezon ko dekhkar kuch purane pal phir se jee sakoon.\n\nLekin phir ek doosra khayal aata tha.\n\nWoh cheezein unki thi. Ho sakta hai unmein se kuch unki favourite hon, kuch unke liye zaroori hon. Main apni yaadon ko sambhalne ke liye unki pasand ki cheezein apne paas rakhkar unhe kisi pareshani mein nahi daalna chahta tha.\n\nIsliye aakhirkar main unki cheezein unhe wapas kar deta tha.\n\nShayad yeh baat chhoti lage, lekin mere liye ismein bhi ek feeling chhupi thi.\n\nMain unki yaadon ko apne paas rakhna chahta tha, lekin unki khushiyon ki keemat par nahi.\n\nMujhe unki cheezon se zyada unki muskurahat pyaari thi. Main nahi chahta tha ki meri kisi chhoti-si ichha ki wajah se woh dukhi hon ya unhe kisi chee
